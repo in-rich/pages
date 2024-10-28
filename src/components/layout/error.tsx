@@ -1,4 +1,4 @@
-import css from "./error-page.module.css";
+import css from "./error.module.css";
 
 import Error from "@/assets/icons/error.svg";
 

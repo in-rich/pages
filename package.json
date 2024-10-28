@@ -6,10 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint:default": "eslint --config=./.eslintrc.json --ext .js,.jsx,.ts,.tsx .",
-    "lint:prettier": "prettier --check './**/*.{js,jsx,ts,tsx,css,md,json}' --config ./.prettierrc",
-    "lint": "npm run lint:default && npm run lint:prettier",
-    "format": "prettier --write './**/*.{js,jsx,ts,tsx,css,md,json}' --config ./.prettierrc"
+    "lint:default": "eslint --config=./eslint.config.js ./src",
+    "lint:prettier": "prettier --check './**/*.{js,jsx,ts,tsx,css,md,json,html}' --config ./.prettierrc",
+    "lint": "pnpm lint:default && pnpm lint:prettier",
+    "format": "prettier --write './**/*.{js,jsx,ts,tsx,css,md,json,html}' --config ./.prettierrc"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -25,6 +25,7 @@
     "@eslint/eslintrc": "^3.1.0",
     "@eslint/js": "^9.13.0",
     "@next/eslint-plugin-next": "^15.0.1",
+    "@svgr/webpack": "^8.1.0",
     "@tanstack/eslint-plugin-query": "^5.59.7",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/node": "^20",
@@ -39,6 +40,7 @@
     "globals": "^15.11.0",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.11.0"
+    "typescript-eslint": "^8.11.0",
+    "yaml-loader": "^0.8.1"
   }
 }

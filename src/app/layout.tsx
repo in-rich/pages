@@ -1,5 +1,5 @@
 import css from "./main.module.css";
-import "@/assets/globals.css";
+import "@/assets/global.css";
 import "@/assets/var.css";
 
 import type { Metadata } from "next";

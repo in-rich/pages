@@ -18,29 +18,32 @@ const PAGE_TITLE: Record<string, string> = {
 
 export const generateMetadata = async ({ searchParams }: ValidationPageProps): Promise<Metadata> => {
   return {
-    title: PAGE_TITLE[searchParams.mode ?? ""],
+    title: PAGE_TITLE[(await searchParams).mode ?? ""],
     robots: { index: false, follow: false },
   };
 };
 
 const Page = async ({ searchParams }: ValidationPageProps) => {
-  const oobCode = searchParams.oobCode ?? "";
+  const oobCode = (await searchParams).oobCode ?? "";
 
-  switch (searchParams.mode) {
-    case "verifyEmail":
+  switch (oobCode) {
+    case "verifyEmail": {
       await applyActionCode(FirebaseAuth, oobCode).catch((err) => {
         throw new Error(`Email validation failed: ${typeof err == "string" ? err : err.message}`);
       });
 
       return <SuccessPage title={"Email confirmed!"} subTitle={"You can now log in to inrich"} />;
-    case "resetPassword":
+    }
+    case "resetPassword": {
       const email = await verifyPasswordResetCode(FirebaseAuth, oobCode).catch((err) => {
         throw new Error(`Password update failed : ${typeof err == "string" ? err : err.message}`);
       });
 
       return <PasswordUpdatePage email={email} oobCode={oobCode} />;
-    default:
+    }
+    default: {
       notFound();
+    }
   }
 };
 

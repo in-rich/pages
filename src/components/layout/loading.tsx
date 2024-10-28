@@ -1,4 +1,4 @@
-import css from "./loading-page.module.css";
+import css from "./loading.module.css";
 
 import Spinner from "@/assets/icons/spinner.svg";
 

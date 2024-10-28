@@ -1,4 +1,7 @@
+"use client";
+
 import { LoadingPage } from "@/components/layout";
+import { usePromise } from "@/lib/hooks/promise";
 import { ValidationPageMode, ValidationPageProps } from "@/typings";
 
 const PAGE_TITLE: Record<string, string> = {
@@ -8,5 +11,6 @@ const PAGE_TITLE: Record<string, string> = {
 };
 
 export default function Loading({ searchParams }: ValidationPageProps) {
-  return <LoadingPage title={PAGE_TITLE[searchParams?.mode ?? ""]} />;
+  const { data: mode } = usePromise(searchParams?.then((p) => p.mode));
+  return <LoadingPage title={PAGE_TITLE[mode ?? ""]} />;
 }
