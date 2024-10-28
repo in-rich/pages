@@ -1,0 +1,41 @@
+html {
+  --inrich-green: #14ae34;
+  --inrich-green-hover: #0e7c26;
+  --inrich-color-text-green: #11972e;
+  --inrich-red: #ff1744;
+  --inrich-red-hover: #c4001d;
+  --inrich-red-light: #ffcdd2;
+  --inrich-blue: #0091ea;
+  --inrich-blue-light: #b2ebf2;
+  --inrich-blue-active: #0f213a;
+  --inrich-orange: #ff9100;
+  --inrich-orange-light: #ffe0b2;
+  --inrich-paper: #ececec;
+  --inrich-text-discrete: #a0a0a0;
+  --inrich-text: #323232;
+  --inrich-text-secondary: #646464;
+  --inrich-text-inverted: #ffffff;
+  --inrich-color-text-disabled: rgb(0 0 0/0.3);
+
+  --inrich-disabled: #646464;
+
+  --inrich-spacing-xs: 3px;
+  --inrich-spacing-s: 6px;
+  --inrich-spacing-xm: 9px;
+  --inrich-spacing-m: 12px;
+  --inrich-spacing-l: 24px;
+  --inrich-spacing-xl: 48px;
+  --inrich-spacing-xxl: 60px;
+
+  --inrich-font-size-s: 12px;
+  --inrich-font-size-m: 14px;
+  --inrich-font-size-l: 16px;
+  --inrich-font-size-ll: 20px;
+  --inrich-font-size-xl: 24px;
+  --inrich-font-size-xll: 32px;
+  --inrich-font-size-xxl: 48px;
+
+  --color-text-low-emphasis: rgba(0, 0, 0, 0.6);
+
+  --inrich-border-light: thin solid #ccc;
+}

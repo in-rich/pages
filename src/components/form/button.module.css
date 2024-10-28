@@ -1,0 +1,23 @@
+.button {
+  box-sizing: border-box;
+  padding: var(--inrich-spacing-m);
+  border-radius: calc(var(--inrich-spacing-m) + 1lh);
+  color: var(--inrich-text-inverted);
+  font-weight: bold;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  transition: linear 0.1s;
+  cursor: pointer;
+  background-color: var(--inrich-green);
+}
+
+.button:disabled {
+  cursor: default;
+  pointer-events: none;
+  background-color: var(--inrich-text-discrete);
+}
+
+.button:not(:disabled):hover {
+  background-color: var(--inrich-green-hover);
+}

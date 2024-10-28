@@ -1,0 +1,50 @@
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--inrich-spacing-xs);
+  align-self: stretch;
+  align-items: stretch;
+  text-align: left;
+}
+
+.label > .label-text {
+  font-size: var(--inrich-font-size-s);
+  color: var(--inrich-text);
+  font-weight: normal;
+}
+
+.label[data-required="true"] > .label-text::after {
+  content: " *";
+  white-space: pre;
+  color: var(--inrich-red);
+}
+
+.label > input {
+  border-radius: var(--inrich-spacing-s);
+  border-style: solid;
+  border-width: thin;
+  border-color: var(--inrich-text);
+  padding: var(--inrich-spacing-s);
+  outline: none;
+  box-shadow: none;
+  appearance: none;
+  font-size: var(--inrich-font-size-l);
+  font-weight: normal;
+  color: var(--inrich-text);
+}
+
+.label > .error {
+  font-size: var(--inrich-font-size-s);
+  color: var(--inrich-red);
+  font-weight: normal;
+  text-align: left;
+}
+
+.label > input::placeholder {
+  font-size: 0.9em;
+  color: var(--inrich-text-discrete);
+}
+
+.label > input:focus {
+  background-color: var(--inrich-paper);
+}
