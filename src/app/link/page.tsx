@@ -25,16 +25,17 @@ export const generateMetadata = async ({ searchParams }: ValidationPageProps): P
 
 const Page = async ({ searchParams }: ValidationPageProps) => {
   const oobCode = (await searchParams).oobCode ?? "";
+  const mode = (await searchParams).mode ?? "";
 
-  switch (oobCode) {
-    case "verifyEmail": {
+  switch (mode) {
+    case ValidationPageMode.VERIFY_EMAIL: {
       await applyActionCode(FirebaseAuth, oobCode).catch((err) => {
         throw new Error(`Email validation failed: ${typeof err == "string" ? err : err.message}`);
       });
 
       return <SuccessPage title={"Email confirmed!"} subTitle={"You can now log in to inrich"} />;
     }
-    case "resetPassword": {
+    case ValidationPageMode.RESET_PASSWORD: {
       const email = await verifyPasswordResetCode(FirebaseAuth, oobCode).catch((err) => {
         throw new Error(`Password update failed : ${typeof err == "string" ? err : err.message}`);
       });

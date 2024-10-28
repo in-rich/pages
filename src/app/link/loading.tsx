@@ -11,6 +11,6 @@ const PAGE_TITLE: Record<string, string> = {
 };
 
 export default function Loading({ searchParams }: ValidationPageProps) {
-  const { data: mode } = usePromise(searchParams?.then((p) => p.mode));
-  return <LoadingPage title={PAGE_TITLE[mode ?? ""]} />;
+  const { data: p } = usePromise(searchParams);
+  return <LoadingPage title={PAGE_TITLE[p?.mode ?? ""]} />;
 }
