@@ -1,8 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
+
+import { useSearchParams } from "next/navigation";
+
 import { ErrorPage } from "@/components/layout";
-import { usePromise } from "@/lib/hooks/promise";
-import { ValidationPageMode, ValidationPageProps } from "@/typings";
+import { ValidationPageMode } from "@/typings";
 
 const PAGE_TITLE: Record<string, string> = {
   [ValidationPageMode.VERIFY_EMAIL]: "Email verification failed",
@@ -10,7 +13,16 @@ const PAGE_TITLE: Record<string, string> = {
   "": "",
 };
 
-export default function Error({ searchParams }: ValidationPageProps) {
-  const { data: p } = usePromise(searchParams);
-  return <ErrorPage title={PAGE_TITLE[p?.mode ?? ""]} />;
+const RenderError = () => {
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+  return <ErrorPage title={PAGE_TITLE[mode ?? ""]} />;
+};
+
+export default function Error() {
+  return (
+    <Suspense>
+      <RenderError />
+    </Suspense>
+  );
 }

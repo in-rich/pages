@@ -1,8 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
+
+import { useSearchParams } from "next/navigation";
+
 import { LoadingPage } from "@/components/layout";
-import { usePromise } from "@/lib/hooks/promise";
-import { ValidationPageMode, ValidationPageProps } from "@/typings";
+import { ValidationPageMode } from "@/typings";
 
 const PAGE_TITLE: Record<string, string> = {
   [ValidationPageMode.VERIFY_EMAIL]: "Email validation",
@@ -10,7 +13,16 @@ const PAGE_TITLE: Record<string, string> = {
   "": "",
 };
 
-export default function Loading({ searchParams }: ValidationPageProps) {
-  const { data: p } = usePromise(searchParams);
-  return <LoadingPage title={PAGE_TITLE[p?.mode ?? ""]} />;
+const RenderLoading = () => {
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+  return <LoadingPage title={PAGE_TITLE[mode ?? ""]} />;
+};
+
+export default function Loading() {
+  return (
+    <Suspense>
+      <RenderLoading />
+    </Suspense>
+  );
 }
