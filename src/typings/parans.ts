@@ -4,8 +4,8 @@ export enum ValidationPageMode {
 }
 
 export interface ValidationPageProps {
-  searchParams: {
+  searchParams: Promise<{
     oobCode?: string;
     mode?: string;
-  };
+  }>;
 }

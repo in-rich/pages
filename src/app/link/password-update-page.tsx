@@ -47,21 +47,24 @@ export const PasswordUpdatePage: FC<passwordUpdatePageProps> = ({ oobCode }) => 
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
 
-  const onSubmit = useCallback(async (data: ZodSchemaType<typeof UpdatePasswordSchema>) => {
-    try {
-      setIsProcessing(true);
-      await confirmPasswordReset(FirebaseAuth, oobCode, data.password);
-      setSuccess(true);
-    } catch (error) {
-      if ((error as FirebaseError)?.code == "auth/weak-password") {
-        setErrorMessage("Password is too weak");
-      } else {
-        setError(true);
+  const onSubmit = useCallback(
+    async (data: ZodSchemaType<typeof UpdatePasswordSchema>) => {
+      try {
+        setIsProcessing(true);
+        await confirmPasswordReset(FirebaseAuth, oobCode, data.password);
+        setSuccess(true);
+      } catch (error) {
+        if ((error as FirebaseError)?.code == "auth/weak-password") {
+          setErrorMessage("Password is too weak");
+        } else {
+          setError(true);
+        }
       }
-    }
 
-    setIsProcessing(false);
-  }, []);
+      setIsProcessing(false);
+    },
+    [oobCode],
+  );
 
   if (error) return <ErrorPage title={"An error has occurred"} />;
 

@@ -1,0 +1,186 @@
+name: main
+
+on: [ push ]
+
+jobs:
+  # --------------------------------------------------------------------------------
+  # Lint stage
+  # --------------------------------------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: install pnpm
+        run: npm install -g pnpm
+      - name: install dependencies
+        run: pnpm i --frozen-lockfile
+      - name: lint
+        run: pnpm lint
+
+  # --------------------------------------------------------------------------------
+  # Build stage
+  # --------------------------------------------------------------------------------
+  build:
+    runs-on: ubuntu-latest
+    needs: [ lint ]
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: install pnpm
+        run: npm install -g pnpm
+      - name: install dependencies
+        run: pnpm i --frozen-lockfile
+      - name: build the application
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+        run: pnpm build
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [ lint ]
+    environment: development
+    env:
+      PORT: 8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - name: build the docker image
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+        run: |
+          docker build . \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID \
+            --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=$NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET \
+            --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID \
+            --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID \
+
+  # --------------------------------------------------------------------------------
+  # Deploy stage
+  # --------------------------------------------------------------------------------
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [ build-docker, build ]
+    if: github.ref == 'refs/heads/staging' && success()
+    environment: staging
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        id: auth
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.PREPROD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.PREPROD_SERVICE_ACCOUNT }}
+      - name: Docker Auth
+        id: docker-auth
+        uses: docker/login-action@v3
+        with:
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.access_token }}'
+          registry: 'europe-west9-docker.pkg.dev'
+      - name: Build and Push Container
+        run: |-
+          docker build \
+            -t "europe-west9-docker.pkg.dev/inrich-preprod/cloud-run-source-deploy/pages:${{ github.sha }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }} \
+            ./
+          docker push "europe-west9-docker.pkg.dev/inrich-preprod/cloud-run-source-deploy/pages:${{ github.sha }}"
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: pages
+          env_vars: |-
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+            NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          region: europe-west9
+          project_id: inrich-preprod
+          image: europe-west9-docker.pkg.dev/inrich-preprod/cloud-run-source-deploy/pages:${{ github.sha }}
+          flags: '--concurrency=100 --timeout=60 --min-instances=1 --max-instances=3 --memory=512Mi --cpu=1 --platform=managed --allow-unauthenticated'
+      - name: show output
+        run: echo ${{ steps.deploy.outputs.url }}
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: [ build-docker, build ]
+    if: github.ref == 'refs/heads/master' && success()
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        id: auth
+        with:
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.PROD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.PROD_SERVICE_ACCOUNT }}
+      - name: Docker Auth
+        id: docker-auth
+        uses: docker/login-action@v3
+        with:
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.access_token }}'
+          registry: 'europe-west9-docker.pkg.dev'
+      - name: Build and Push Container
+        run: |-
+          docker build \
+            -t "europe-west9-docker.pkg.dev/inrich-f9a0a/cloud-run-source-deploy/pages:${{ github.sha }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }} \
+            --build-arg NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }} \
+            ./
+          docker push "europe-west9-docker.pkg.dev/inrich-f9a0a/cloud-run-source-deploy/pages:${{ github.sha }}"
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: pages
+          env_vars: |-
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+            NEXT_PUBLIC_FIREBASE_APP_ID=${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          region: europe-west9
+          project_id: inrich-f9a0a
+          image: europe-west9-docker.pkg.dev/inrich-f9a0a/cloud-run-source-deploy/pages:${{ github.sha }}
+          flags: '--concurrency=100 --timeout=60 --min-instances=1 --max-instances=3 --memory=512Mi --cpu=1 --platform=managed --allow-unauthenticated'
+      - name: show output
+        run: echo ${{ steps.deploy.outputs.url }}
