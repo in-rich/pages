@@ -8,6 +8,6 @@ export const SuccessPage: FC<{ title: ReactNode; subTitle?: ReactNode }> = ({ ti
   <PageWrapper>
     <h1>{title}</h1>
     {subTitle && <p>{subTitle}</p>}
-    <FormButtonLink href="https://www.linkedin.com/in/ashley-morris-774753272/">Come back to LinkedIn</FormButtonLink>
+    <FormButtonLink href="https://www.linkedin.com/in/ashley-morris-inrich/">Come back to LinkedIn</FormButtonLink>
   </PageWrapper>
 );
